@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PsychologyResearchPool — Database GUI</title>
+<style>
+  :root {
+    --bg: #f4f6f8;
+    --card: #ffffff;
+    --text: #1f2937;
+    --muted: #6b7280;
+    --accent: #4f46e5;
+    --accent2: #06b6d4;
+    --danger: #ef4444;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --border: #e5e7eb;
+    --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+  /* Sidebar */
+  aside {
+    width: 260px;
+    background: var(--card);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 24px 0;
+  }
+  .logo {
+    font-size: 1.25rem;
+    font-weight: 700;
+    padding: 0 24px 24px;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+  .nav-item {
+    padding: 12px 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.95rem;
+    transition: background .15s, color .15s;
+    border-left: 3px solid transparent;
+  }
+  .nav-item:hover { background: #f3f4f6; }
+  .nav-item.active { background: #eef2ff; color: var(--accent); border-left-color: var(--accent); font-weight: 600; }
+  .nav-icon { width: 20px; text-align: center; }
+  .badge {
+    margin-left: auto;
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-weight: 600;
+  }
+  /* Main */
+  main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  header {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  h1 { font-size: 1.25rem; font-weight: 600; }
+  .toolbar { display: flex; gap: 12px; align-items: center; }
+  input[type="text"], input[type="date"], input[type="number"], input[type="email"], select, textarea {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+    font-family: inherit;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,70,229,0.12); }
+  .btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: transform .05s, opacity .15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #4338ca; }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-danger:hover { background: #dc2626; }
+  .btn-warning { background: var(--warning); color: #fff; }
+  .btn-warning:hover { background: #d97706; }
+  .btn-secondary { background: #e5e7eb; color: var(--text); }
+  .btn-secondary:hover { background: #d1d5db; }
+  .btn-sm { padding: 6px 12px; font-size: 0.8rem; }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .btn-outline:hover { background: #f3f4f6; }
+
+  /* Content */
+  .content { flex: 1; overflow: auto; padding: 24px 32px; }
+  .card {
+    background: var(--card);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  thead th {
+    background: #f9fafb;
+    text-align: left;
+    padding: 12px 16px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  tbody td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  tbody tr:hover { background: #f9fafb; }
+  tbody tr:last-child td { border-bottom: none; }
+  .actions { display: flex; gap: 6px; }
+  .col-id { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 0.8rem; }
+  .truncate { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+  .status-completed { background: #d1fae5; color: #065f46; }
+  .status-assigned { background: #dbeafe; color: #1e40af; }
+  .status-withdrawn { background: #fee2e2; color: #991b1b; }
+  .status-active { background: #d1fae5; color: #065f46; }
+  .status-inactive { background: #fee2e2; color: #991b1b; }
+  .empty { text-align: center; padding: 48px; color: var(--muted); }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+    display: none; align-items: center; justify-content: center;
+    z-index: 50; backdrop-filter: blur(4px);
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--card);
+    border-radius: 16px;
+    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
+    width: 560px;
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    animation: modalIn .2s ease-out;
+  }
+  .modal.wide { width: 640px; }
+  @keyframes modalIn { from { opacity:0; transform: translateY(12px) scale(0.98); } to { opacity:1; transform: translateY(0) scale(1); } }
+  .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--border); font-weight: 600; font-size: 1.1rem; display:flex; align-items:center; gap:10px; }
+  .modal-body { padding: 20px 24px; overflow: auto; font-size:0.95rem; line-height:1.5; }
+  .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-grid.full { grid-template-columns: 1fr; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font-size: 0.8rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
+
+  /* Delete confirmation specific */
+  .impact-list { background: #f9fafb; border-radius: 8px; padding: 12px 16px; margin: 12px 0; max-height: 200px; overflow: auto; }
+  .impact-list li { padding: 4px 0; font-size: 0.88rem; color: var(--text); }
+  .impact-list li .meta { color: var(--muted); font-size: 0.8rem; }
+  .cascade-toggle { display: flex; align-items: center; gap: 10px; margin-top: 16px; padding: 12px; background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; }
+  .cascade-toggle input { width: 18px; height: 18px; accent-color: var(--warning); }
+  .cascade-toggle label { font-weight: 600; color: #92400e; cursor: pointer; font-size: 0.9rem; }
+
+  /* Toast notifications */
+  .toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+  }
+  .toast {
+    background: var(--card);
+    border-radius: 10px;
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 280px;
+    max-width: 360px;
+    border-left: 4px solid var(--accent);
+    animation: toastIn .3s ease-out;
+    pointer-events: auto;
+    font-size: 0.9rem;
+  }
+  .toast.success { border-left-color: var(--success); }
+  .toast.error { border-left-color: var(--danger); }
+  .toast.warning { border-left-color: var(--warning); }
+  @keyframes toastIn { from { opacity:0; transform: translateX(20px); } to { opacity:1; transform: translateX(0); } }
+  .toast-close { margin-left: auto; background: none; border: none; cursor: pointer; color: var(--muted); font-size: 1rem; }
+
+  /* Dashboard */
+  .dash-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; margin-bottom: 24px; }
+  .stat {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+  }
+  .stat-value { font-size: 1.75rem; font-weight: 700; color: var(--accent); }
+  .stat-label { font-size: 0.85rem; color: var(--muted); margin-top: 4px; }
+  .recent { background: var(--card); border-radius: 12px; box-shadow: var(--shadow); border: 1px solid var(--border); padding: 20px; }
+  .recent h3 { font-size: 1rem; margin-bottom: 12px; }
+  .recent-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 0.88rem; }
+  .recent-row:last-child { border-bottom: none; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #a1a1a1; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    aside { width: 64px; }
+    .logo span, .nav-item span, .badge { display: none; }
+    .nav-item { justify-content: center; padding: 12px 0; }
+    .content { padding: 16px; }
+    .form-grid { grid-template-columns: 1fr; }
+    .modal { width: 95vw; }
+  }
+</style>
+</head>
+<body>
+
+<aside>
+  <div class="logo">🧠 <span>PsychPool DB</span></div>
+  <nav id="sidebar">
+    <div class="nav-item active" data-table="dashboard"><span class="nav-icon">📊</span><span>Dashboard</span></div>
+    <div class="nav-item" data-table="Participants"><span class="nav-icon">👥</span><span>Participants</span><span class="badge" id="badge-Participants">25</span></div>
+    <div class="nav-item" data-table="Researchers"><span class="nav-icon">🔬</span><span>Researchers</span><span class="badge" id="badge-Researchers">10</span></div>
+    <div class="nav-item" data-table="Ethics_Approvals"><span class="nav-icon">📋</span><span>Ethics Approvals</span><span class="badge" id="badge-Ethics_Approvals">10</span></div>
+    <div class="nav-item" data-table="Studies"><span class="nav-icon">📝</span><span>Studies</span><span class="badge" id="badge-Studies">10</span></div>
+    <div class="nav-item" data-table="Assignments"><span class="nav-icon">🔗</span><span>Assignments</span><span class="badge" id="badge-Assignments">43</span></div>
+    <div class="nav-item" data-table="Credit_Hours_Log"><span class="nav-icon">⏱️</span><span>Credit Hours Log</span><span class="badge" id="badge-Credit_Hours_Log">29</span></div>
+  </nav>
+</aside>
+
+<main>
+  <header>
+    <h1 id="page-title">Dashboard</h1><span id="save-status" style="font-size:0.8rem;color:var(--muted);margin-left:8px;opacity:0;transition:opacity .3s;">💾 Saved to browser</span>
+    <div class="toolbar">
+      <input type="text" id="search" placeholder="Search current table…" style="width:220px;">
+      <button class="btn btn-primary" id="btn-add" onclick="openAddModal()">+ Add Record</button>
+      <button class="btn btn-outline" onclick="exportData()" title="Export">⬇️ Export</button>
+      <button class="btn btn-outline" onclick="importData()" title="Import">⬆️ Import</button>
+      <button class="btn btn-outline" onclick="resetData()" title="Reset">↺ Reset</button>
+    </div>
+  </header>
+
+  <div class="content" id="content"></div>
+</main>
+
+<!-- Add/Edit Modal -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-header" id="modal-title">Add Record</div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitAdd()">Save Record</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal-overlay" id="delete-overlay">
+  <div class="modal wide">
+    <div class="modal-header" style="color:var(--danger)">⚠️ Confirm Deletion</div>
+    <div class="modal-body" id="delete-body">
+      <!-- Dynamic content -->
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+      <button class="btn btn-danger" id="btn-delete-confirm" onclick="confirmDelete()">Delete Record</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+/* ============================
+   DATA STORE
+   ============================ */
+const db = {
+  Participants: [
+    {participant_id:1,first_name:"Sophie",last_name:"Laurent",email:"s.laurent@student.uni.edu",dob:"2002-04-12",gender:"Female",phone_number:"+1-555-0101",is_active:true},
+    {participant_id:2,first_name:"Daniel",last_name:"Mbeki",email:"d.mbeki@student.uni.edu",dob:"2001-09-23",gender:"Male",phone_number:"+1-555-0102",is_active:true},
+    {participant_id:3,first_name:"Yuki",last_name:"Tanaka",email:"y.tanaka@student.uni.edu",dob:"2003-01-30",gender:"Non-binary",phone_number:"+1-555-0103",is_active:true},
+    {participant_id:4,first_name:"Carlos",last_name:"Reyes",email:"c.reyes@student.uni.edu",dob:"2000-07-15",gender:"Male",phone_number:"+1-555-0104",is_active:true},
+    {participant_id:5,first_name:"Ingrid",last_name:"Holmberg",email:"i.holmberg@student.uni.edu",dob:"2002-11-08",gender:"Female",phone_number:"+1-555-0105",is_active:true},
+    {participant_id:6,first_name:"Kwame",last_name:"Asante",email:"k.asante@student.uni.edu",dob:"2001-03-20",gender:"Male",phone_number:"+1-555-0106",is_active:true},
+    {participant_id:7,first_name:"Mei-Ling",last_name:"Chen",email:"ml.chen@student.uni.edu",dob:"2003-06-14",gender:"Female",phone_number:"+1-555-0107",is_active:true},
+    {participant_id:8,first_name:"Tobias",last_name:"Braun",email:"t.braun@external.com",dob:"1995-02-27",gender:"Male",phone_number:"+1-555-0108",is_active:true},
+    {participant_id:9,first_name:"Amara",last_name:"Diallo",email:"a.diallo@student.uni.edu",dob:"2002-08-18",gender:"Female",phone_number:"+1-555-0109",is_active:true},
+    {participant_id:10,first_name:"Liam",last_name:"O'Brien",email:"l.obrien@student.uni.edu",dob:"2001-12-05",gender:"Male",phone_number:"+1-555-0110",is_active:true},
+    {participant_id:11,first_name:"Amelia",last_name:"Fischer",email:"a.fischer@student.uni.edu",dob:"2003-03-14",gender:"Female",phone_number:"+1-555-0111",is_active:true},
+    {participant_id:12,first_name:"Kofi",last_name:"Mensah",email:"k.mensah@student.uni.edu",dob:"2002-07-22",gender:"Male",phone_number:"+1-555-0112",is_active:true},
+    {participant_id:13,first_name:"Isabelle",last_name:"Fontaine",email:"i.fontaine@student.uni.edu",dob:"2001-11-03",gender:"Female",phone_number:"+1-555-0113",is_active:true},
+    {participant_id:14,first_name:"Ravi",last_name:"Patel",email:"r.patel@student.uni.edu",dob:"2003-05-19",gender:"Male",phone_number:"+1-555-0114",is_active:true},
+    {participant_id:15,first_name:"Elena",last_name:"Volkov",email:"e.volkov@student.uni.edu",dob:"2000-09-30",gender:"Female",phone_number:"+1-555-0115",is_active:true},
+    {participant_id:16,first_name:"Marcus",last_name:"Adeyemi",email:"m.adeyemi@student.uni.edu",dob:"2002-01-15",gender:"Male",phone_number:"+1-555-0116",is_active:true},
+    {participant_id:17,first_name:"Zara",last_name:"Hussain",email:"z.hussain@student.uni.edu",dob:"2003-08-27",gender:"Female",phone_number:"+1-555-0117",is_active:true},
+    {participant_id:18,first_name:"Luca",last_name:"Romano",email:"l.romano@student.uni.edu",dob:"2001-04-08",gender:"Male",phone_number:"+1-555-0118",is_active:true},
+    {participant_id:19,first_name:"Anika",last_name:"Johansson",email:"a.johansson@student.uni.edu",dob:"2002-12-11",gender:"Female",phone_number:"+1-555-0119",is_active:true},
+    {participant_id:20,first_name:"James",last_name:"Okafor",email:"j.okafor@student.uni.edu",dob:"2003-06-04",gender:"Male",phone_number:"+1-555-0120",is_active:true},
+    {participant_id:21,first_name:"Hana",last_name:"Nakamura",email:"h.nakamura@student.uni.edu",dob:"2001-02-18",gender:"Female",phone_number:"+1-555-0121",is_active:true},
+    {participant_id:22,first_name:"Oliver",last_name:"Schmidt",email:"o.schmidt@external.com",dob:"1992-10-25",gender:"Male",phone_number:"+1-555-0122",is_active:true},
+    {participant_id:23,first_name:"Priya",last_name:"Nair",email:"p.nair@student.uni.edu",dob:"2002-09-07",gender:"Female",phone_number:"+1-555-0123",is_active:true},
+    {participant_id:24,first_name:"Ethan",last_name:"Clarke",email:"e.clarke@student.uni.edu",dob:"2003-01-23",gender:"Male",phone_number:"+1-555-0124",is_active:true},
+    {participant_id:25,first_name:"Miriam",last_name:"Ben-David",email:"m.bendavid@student.uni.edu",dob:"2000-06-16",gender:"Female",phone_number:"+1-555-0125",is_active:false}
+  ],
+  Researchers: [
+    {researcher_id:1,first_name:"Elena",last_name:"Torres",email:"e.torres@uni.edu",department:"Psychology"},
+    {researcher_id:2,first_name:"Marcus",last_name:"Webb",email:"m.webb@uni.edu",department:"Cognitive Neuroscience"},
+    {researcher_id:3,first_name:"Priya",last_name:"Sharma",email:"p.sharma@uni.edu",department:"Behavioral Science"},
+    {researcher_id:4,first_name:"James",last_name:"Kowalski",email:"j.kowalski@uni.edu",department:"Clinical Psychology"},
+    {researcher_id:5,first_name:"Aisha",last_name:"Nkosi",email:"a.nkosi@uni.edu",department:"Psychology"},
+    {researcher_id:6,first_name:"Sofia",last_name:"Marchetti",email:"s.marchetti@uni.edu",department:"Developmental Psychology"},
+    {researcher_id:7,first_name:"David",last_name:"Osei",email:"d.osei@uni.edu",department:"Social Psychology"},
+    {researcher_id:8,first_name:"Fatima",last_name:"Al-Rashid",email:"f.alrashid@uni.edu",department:"Neuropsychology"},
+    {researcher_id:9,first_name:"Henrik",last_name:"Larsson",email:"h.larsson@uni.edu",department:"Health Psychology"},
+    {researcher_id:10,first_name:"Camille",last_name:"Dupont",email:"c.dupont@uni.edu",department:"Experimental Psychology"}
+  ],
+  Ethics_Approvals: [
+    {ethics_approval_id:1,approval_code:"IRB-2024-001",approval_date:"2024-02-05",expiry_date:"2025-02-05",approved_by:"University Institutional Review Board"},
+    {ethics_approval_id:2,approval_code:"IRB-2024-002",approval_date:"2024-03-18",expiry_date:"2025-03-18",approved_by:"University Institutional Review Board"},
+    {ethics_approval_id:3,approval_code:"FESC-2024-001",approval_date:"2024-04-10",expiry_date:"2025-04-10",approved_by:"Faculty Ethics Sub-Committee – Psychology"},
+    {ethics_approval_id:4,approval_code:"IRB-2024-003",approval_date:"2024-07-01",expiry_date:"2024-12-31",approved_by:"University Institutional Review Board"},
+    {ethics_approval_id:5,approval_code:"HSEB-2025-001",approval_date:"2025-02-10",expiry_date:"2026-02-10",approved_by:"Health Sciences Ethics Board"},
+    {ethics_approval_id:6,approval_code:"SREP-2025-001",approval_date:"2025-03-05",expiry_date:"2026-03-05",approved_by:"Social Research Ethics Panel"},
+    {ethics_approval_id:7,approval_code:"EIRB-2025-001",approval_date:"2025-04-20",expiry_date:"2026-04-20",approved_by:"External Independent Ethics Review Board"},
+    {ethics_approval_id:8,approval_code:"HSEB-2025-002",approval_date:"2025-05-01",expiry_date:"2026-05-01",approved_by:"Health Sciences Ethics Board"},
+    {ethics_approval_id:9,approval_code:"SREP-2024-005",approval_date:"2024-11-20",expiry_date:"2025-11-20",approved_by:"Social Research Ethics Panel"},
+    {ethics_approval_id:10,approval_code:"FESC-2025-001",approval_date:"2025-01-15",expiry_date:"2026-01-15",approved_by:"Faculty Ethics Sub-Committee – Psychology"}
+  ],
+  Studies: [
+    {study_id:1,study_name:"Cognitive Load and Decision Fatigue Under Time Pressure",description:"Double-blind RCT examining how cognitive load manipulation affects decision quality under timed conditions. Participants complete a series of cognitive tasks with varying difficulty levels.",start_date:"2024-03-01",end_date:"2025-02-28",is_double_blind:true,ethics_approval_id:1,principal_investigator_id:1},
+    {study_id:2,study_name:"Neural Correlates of Working Memory in Young Adults",description:"fMRI study tracking prefrontal cortex activation during n-back tasks. Participants complete 2-back and 3-back working memory tasks inside the scanner.",start_date:"2024-04-15",end_date:"2025-04-14",is_double_blind:false,ethics_approval_id:2,principal_investigator_id:2},
+    {study_id:3,study_name:"Social Conformity and Group Pressure Paradigms",description:"Classic Asch-variant design examining social conformity with full debrief. Uses confederates to induce social pressure.",start_date:"2024-05-01",end_date:"2024-11-30",is_double_blind:true,ethics_approval_id:3,principal_investigator_id:3},
+    {study_id:4,study_name:"CBT App Efficacy for Mild Anxiety – Pilot RCT",description:"Pilot double-blind RCT comparing a guided CBT mobile app against a waitlist control condition. Participants use the app for 8 weeks.",start_date:"2025-03-01",end_date:null,is_double_blind:true,ethics_approval_id:5,principal_investigator_id:4},
+    {study_id:5,study_name:"Implicit Bias Measurement via IAT Battery",description:"Online IAT battery examining racial and gender implicit associations across undergraduate population.",start_date:"2024-06-01",end_date:"2024-12-31",is_double_blind:false,ethics_approval_id:3,principal_investigator_id:5},
+    {study_id:6,study_name:"Emotion Regulation Strategies in Undergraduates",description:"Survey and behavioural study examining cognitive reappraisal vs expressive suppression in stressful scenarios.",start_date:"2024-09-01",end_date:"2025-06-30",is_double_blind:false,ethics_approval_id:9,principal_investigator_id:7},
+    {study_id:7,study_name:"Sleep Deprivation and Executive Function",description:"Controlled lab study measuring executive function performance following 24-hour sleep deprivation vs normal sleep condition.",start_date:"2025-06-01",end_date:null,is_double_blind:true,ethics_approval_id:8,principal_investigator_id:9},
+    {study_id:8,study_name:"Language Acquisition Patterns in Bilingual Children",description:"Observational study tracking vocabulary acquisition milestones in bilingual vs monolingual children aged 4–7.",start_date:"2025-03-15",end_date:"2026-03-14",is_double_blind:false,ethics_approval_id:5,principal_investigator_id:6},
+    {study_id:9,study_name:"Mindfulness-Based Stress Reduction Efficacy",description:"8-week MBSR programme comparing online vs in-person delivery. Outcome measures include PSS and cortisol levels.",start_date:"2025-01-10",end_date:"2025-09-30",is_double_blind:true,ethics_approval_id:10,principal_investigator_id:10},
+    {study_id:10,study_name:"Trauma Memory Recall and Intrusive Thoughts",description:"Clinical study investigating frequency and vividness of intrusive trauma memories. Requires full clinical support protocol.",start_date:"2025-05-01",end_date:null,is_double_blind:false,ethics_approval_id:7,principal_investigator_id:4}
+  ],
+  Assignments: [
+    {assignment_id:1,participant_id:1,study_id:1,assignment_date:"2024-03-05",completion_status:"Completed"},
+    {assignment_id:2,participant_id:2,study_id:1,assignment_date:"2024-03-05",completion_status:"Completed"},
+    {assignment_id:3,participant_id:5,study_id:1,assignment_date:"2024-03-06",completion_status:"Completed"},
+    {assignment_id:4,participant_id:9,study_id:1,assignment_date:"2024-03-06",completion_status:"Completed"},
+    {assignment_id:5,participant_id:13,study_id:1,assignment_date:"2025-03-01",completion_status:"Completed"},
+    {assignment_id:6,participant_id:15,study_id:1,assignment_date:"2025-03-01",completion_status:"Completed"},
+    {assignment_id:7,participant_id:17,study_id:1,assignment_date:"2025-03-02",completion_status:"Completed"},
+    {assignment_id:8,participant_id:20,study_id:1,assignment_date:"2025-03-02",completion_status:"Assigned"},
+    {assignment_id:9,participant_id:21,study_id:1,assignment_date:"2025-03-02",completion_status:"Assigned"},
+    {assignment_id:10,participant_id:3,study_id:2,assignment_date:"2024-04-20",completion_status:"Completed"},
+    {assignment_id:11,participant_id:8,study_id:2,assignment_date:"2024-04-20",completion_status:"Completed"},
+    {assignment_id:12,participant_id:18,study_id:2,assignment_date:"2025-03-15",completion_status:"Completed"},
+    {assignment_id:13,participant_id:19,study_id:2,assignment_date:"2025-03-15",completion_status:"Completed"},
+    {assignment_id:14,participant_id:22,study_id:2,assignment_date:"2025-03-16",completion_status:"Completed"},
+    {assignment_id:15,participant_id:25,study_id:2,assignment_date:"2025-03-16",completion_status:"Withdrawn"},
+    {assignment_id:16,participant_id:4,study_id:3,assignment_date:"2024-05-02",completion_status:"Completed"},
+    {assignment_id:17,participant_id:6,study_id:3,assignment_date:"2024-05-02",completion_status:"Completed"},
+    {assignment_id:18,participant_id:2,study_id:3,assignment_date:"2024-05-03",completion_status:"Completed"},
+    {assignment_id:19,participant_id:7,study_id:4,assignment_date:"2025-03-10",completion_status:"Assigned"},
+    {assignment_id:20,participant_id:10,study_id:4,assignment_date:"2025-03-10",completion_status:"Assigned"},
+    {assignment_id:21,participant_id:15,study_id:4,assignment_date:"2025-04-05",completion_status:"Withdrawn"},
+    {assignment_id:22,participant_id:21,study_id:4,assignment_date:"2025-04-05",completion_status:"Assigned"},
+    {assignment_id:23,participant_id:8,study_id:5,assignment_date:"2024-06-02",completion_status:"Completed"},
+    {assignment_id:24,participant_id:1,study_id:5,assignment_date:"2024-06-02",completion_status:"Completed"},
+    {assignment_id:25,participant_id:11,study_id:5,assignment_date:"2025-04-10",completion_status:"Completed"},
+    {assignment_id:26,participant_id:12,study_id:5,assignment_date:"2025-04-10",completion_status:"Completed"},
+    {assignment_id:27,participant_id:14,study_id:5,assignment_date:"2025-04-11",completion_status:"Completed"},
+    {assignment_id:28,participant_id:16,study_id:5,assignment_date:"2025-04-11",completion_status:"Completed"},
+    {assignment_id:29,participant_id:24,study_id:5,assignment_date:"2025-04-12",completion_status:"Completed"},
+    {assignment_id:30,participant_id:6,study_id:6,assignment_date:"2024-09-10",completion_status:"Completed"},
+    {assignment_id:31,participant_id:11,study_id:6,assignment_date:"2024-09-10",completion_status:"Completed"},
+    {assignment_id:32,participant_id:17,study_id:6,assignment_date:"2024-09-11",completion_status:"Completed"},
+    {assignment_id:33,participant_id:23,study_id:6,assignment_date:"2024-09-11",completion_status:"Completed"},
+    {assignment_id:34,participant_id:4,study_id:7,assignment_date:"2025-06-05",completion_status:"Assigned"},
+    {assignment_id:35,participant_id:13,study_id:7,assignment_date:"2025-06-05",completion_status:"Assigned"},
+    {assignment_id:36,participant_id:18,study_id:7,assignment_date:"2025-06-06",completion_status:"Assigned"},
+    {assignment_id:37,participant_id:7,study_id:8,assignment_date:"2025-03-20",completion_status:"Assigned"},
+    {assignment_id:38,participant_id:14,study_id:8,assignment_date:"2025-03-20",completion_status:"Assigned"},
+    {assignment_id:39,participant_id:5,study_id:9,assignment_date:"2025-01-15",completion_status:"Completed"},
+    {assignment_id:40,participant_id:9,study_id:9,assignment_date:"2025-01-15",completion_status:"Completed"},
+    {assignment_id:41,participant_id:16,study_id:9,assignment_date:"2025-01-16",completion_status:"Assigned"},
+    {assignment_id:42,participant_id:22,study_id:9,assignment_date:"2025-01-16",completion_status:"Completed"},
+    {assignment_id:43,participant_id:15,study_id:10,assignment_date:"2025-05-05",completion_status:"Assigned"},
+    {assignment_id:44,participant_id:19,study_id:10,assignment_date:"2025-05-05",completion_status:"Assigned"}
+  ],
+  Credit_Hours_Log: [
+    {log_id:1,assignment_id:1,hours_awarded:1.0,award_date:"2024-04-10"},
+    {log_id:2,assignment_id:2,hours_awarded:1.0,award_date:"2024-04-10"},
+    {log_id:3,assignment_id:3,hours_awarded:1.0,award_date:"2024-05-08"},
+    {log_id:4,assignment_id:4,hours_awarded:1.0,award_date:"2024-05-08"},
+    {log_id:5,assignment_id:5,hours_awarded:1.0,award_date:"2025-04-15"},
+    {log_id:6,assignment_id:6,hours_awarded:1.0,award_date:"2025-04-15"},
+    {log_id:7,assignment_id:7,hours_awarded:1.0,award_date:"2025-04-15"},
+    {log_id:8,assignment_id:10,hours_awarded:1.5,award_date:"2024-05-20"},
+    {log_id:9,assignment_id:11,hours_awarded:1.5,award_date:"2024-05-20"},
+    {log_id:10,assignment_id:12,hours_awarded:1.5,award_date:"2025-04-11"},
+    {log_id:11,assignment_id:13,hours_awarded:1.5,award_date:"2025-04-11"},
+    {log_id:12,assignment_id:14,hours_awarded:1.5,award_date:"2025-04-12"},
+    {log_id:13,assignment_id:16,hours_awarded:0.5,award_date:"2024-06-12"},
+    {log_id:14,assignment_id:17,hours_awarded:0.5,award_date:"2024-06-12"},
+    {log_id:15,assignment_id:18,hours_awarded:0.5,award_date:"2024-06-12"},
+    {log_id:16,assignment_id:23,hours_awarded:0.5,award_date:"2024-07-15"},
+    {log_id:17,assignment_id:24,hours_awarded:0.5,award_date:"2024-07-15"},
+    {log_id:18,assignment_id:25,hours_awarded:0.5,award_date:"2025-04-18"},
+    {log_id:19,assignment_id:26,hours_awarded:0.5,award_date:"2025-04-18"},
+    {log_id:20,assignment_id:27,hours_awarded:0.5,award_date:"2025-04-18"},
+    {log_id:21,assignment_id:28,hours_awarded:0.5,award_date:"2025-04-18"},
+    {log_id:22,assignment_id:29,hours_awarded:0.5,award_date:"2025-04-18"},
+    {log_id:23,assignment_id:30,hours_awarded:0.75,award_date:"2024-10-01"},
+    {log_id:24,assignment_id:31,hours_awarded:0.75,award_date:"2024-10-01"},
+    {log_id:25,assignment_id:32,hours_awarded:0.75,award_date:"2024-10-01"},
+    {log_id:26,assignment_id:33,hours_awarded:0.75,award_date:"2024-10-01"},
+    {log_id:27,assignment_id:39,hours_awarded:2.0,award_date:"2025-03-15"},
+    {log_id:28,assignment_id:40,hours_awarded:2.0,award_date:"2025-03-15"},
+    {log_id:29,assignment_id:42,hours_awarded:2.0,award_date:"2025-03-15"}
+  ]
+};
+
+const schema = {
+  Participants: {
+    pk: "participant_id", auto: true,
+    fields: [
+      {name:"first_name",type:"text",required:true},
+      {name:"last_name",type:"text",required:true},
+      {name:"email",type:"email",required:true},
+      {name:"dob",type:"date",required:true},
+      {name:"gender",type:"select",options:["Female","Male","Non-binary","Other","Prefer not to say"]},
+      {name:"phone_number",type:"text"},
+      {name:"is_active",type:"select",options:[{label:"Active",value:true},{label:"Inactive",value:false}]}
+    ]
+  },
+  Researchers: {
+    pk: "researcher_id", auto: true,
+    fields: [
+      {name:"first_name",type:"text",required:true},
+      {name:"last_name",type:"text",required:true},
+      {name:"email",type:"email",required:true},
+      {name:"department",type:"text"}
+    ]
+  },
+  Ethics_Approvals: {
+    pk: "ethics_approval_id", auto: true,
+    fields: [
+      {name:"approval_code",type:"text",required:true},
+      {name:"approval_date",type:"date",required:true},
+      {name:"expiry_date",type:"date"},
+      {name:"approved_by",type:"text",required:true}
+    ]
+  },
+  Studies: {
+    pk: "study_id", auto: true,
+    fields: [
+      {name:"study_name",type:"text",required:true},
+      {name:"description",type:"textarea"},
+      {name:"start_date",type:"date",required:true},
+      {name:"end_date",type:"date"},
+      {name:"is_double_blind",type:"select",options:[{label:"Yes",value:true},{label:"No",value:false}]},
+      {name:"ethics_approval_id",type:"number",required:true,ref:"Ethics_Approvals",refLabel:"approval_code"},
+      {name:"principal_investigator_id",type:"number",required:true,ref:"Researchers",refLabel:"email"}
+    ]
+  },
+  Assignments: {
+    pk: "assignment_id", auto: true,
+    fields: [
+      {name:"participant_id",type:"number",required:true,ref:"Participants",refLabel:"email"},
+      {name:"study_id",type:"number",required:true,ref:"Studies",refLabel:"study_name"},
+      {name:"assignment_date",type:"date",required:true},
+      {name:"completion_status",type:"select",options:["Assigned","Completed","Withdrawn"],required:true}
+    ]
+  },
+  Credit_Hours_Log: {
+    pk: "log_id", auto: true,
+    fields: [
+      {name:"assignment_id",type:"number",required:true,ref:"Assignments",refLabel:"assignment_id"},
+      {name:"hours_awarded",type:"number",step:0.25,required:true},
+      {name:"award_date",type:"date",required:true}
+    ]
+  }
+};
+
+let currentTable = "dashboard";
+let searchTerm = "";
+let pendingDelete = null; // {table, id, cascade: bool}
+
+/* ============================
+   UTILITIES
+   ============================ */
+function nextId(table) {
+  const arr = db[table];
+  const pk = schema[table].pk;
+  return arr.length ? Math.max(...arr.map(r=>r[pk])) + 1 : 1;
+}
+function fmtDate(d) { return d ? new Date(d).toLocaleDateString() : "—"; }
+function fmtBool(v) { return v ? "Yes" : "No"; }
+function statusBadge(status) {
+  const cls = status === "Completed" ? "status-completed" : status === "Assigned" ? "status-assigned" : "status-withdrawn";
+  return `<span class="status ${cls}">${status}</span>`;
+}
+function activeBadge(v) {
+  const cls = v ? "status-active" : "status-inactive";
+  return `<span class="status ${cls}">${v ? "Active" : "Inactive"}</span>`;
+}
+function getRef(table, id, labelField) {
+  const row = db[table].find(r => r[schema[table].pk] == id);
+  return row ? (row[labelField] || row[schema[table].pk]) : `ID ${id}`;
+}
+
+/* ============================
+   TOAST SYSTEM
+   ============================ */
+function toast(message, type="info", duration=3000) {
+  const container = document.getElementById("toast-container");
+  const el = document.createElement("div");
+  el.className = `toast ${type}`;
+  const icon = type==="success"?"✅":type==="error"?"❌":type==="warning"?"⚠️":"ℹ️";
+  el.innerHTML = `<span>${icon} ${message}</span><button class="toast-close" onclick="this.parentElement.remove()">×</button>`;
+  container.appendChild(el);
+  setTimeout(() => el.remove(), duration);
+}
+
+/* ============================
+   RENDERING
+   ============================ */
+function render() {
+  updateBadges();
+  if (currentTable === "dashboard") { renderDashboard(); return; }
+  document.getElementById("page-title").textContent = currentTable.replace(/_/g, " ");
+  document.getElementById("btn-add").style.display = "inline-flex";
+  const container = document.getElementById("content");
+  const rows = filterRows(db[currentTable]);
+  const cols = Object.keys(db[currentTable][0] || {});
+  if (!cols.length) { container.innerHTML = `<div class="empty">No records found.</div>`; return; }
+
+  let html = `<div class="card"><table><thead><tr>`;
+  cols.forEach(c => html += `<th>${c.replace(/_/g," ")}</th>`);
+  html += `<th style="width:1px">Actions</th></tr></thead><tbody>`;
+  rows.forEach(row => {
+    html += `<tr>`;
+    cols.forEach(c => {
+      let val = row[c];
+      if (c.endsWith("_id") && c !== schema[currentTable].pk) {
+        const meta = schema[currentTable].fields.find(f => f.name === c);
+        if (meta && meta.ref) val = `${getRef(meta.ref, val, meta.refLabel)} <span class="col-id">(${val})</span>`;
+      }
+      if (c === schema[currentTable].pk) html += `<td class="col-id">${val}</td>`;
+      else if (c === "completion_status") html += `<td>${statusBadge(val)}</td>`;
+      else if (c === "is_active") html += `<td>${activeBadge(val)}</td>`;
+      else if (c === "is_double_blind") html += `<td>${fmtBool(val)}</td>`;
+      else if (c.includes("date")) html += `<td>${fmtDate(val)}</td>`;
+      else if (c === "description") html += `<td><div class="truncate" title="${val||""}">${val||"—"}</div></td>`;
+      else html += `<td>${val !== null && val !== undefined ? val : "—"}</td>`;
+    });
+    const pk = schema[currentTable].pk;
+    html += `<td><div class="actions"><button class="btn btn-danger btn-sm" onclick="promptDelete(${row[pk]})">Delete</button></div></td></tr>`;
+  });
+  html += `</tbody></table></div>`;
+  container.innerHTML = html;
+}
+
+function filterRows(rows) {
+  if (!searchTerm) return rows;
+  const term = searchTerm.toLowerCase();
+  return rows.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(term)));
+}
+
+function updateBadges() {
+  Object.keys(db).forEach(t => {
+    const el = document.getElementById(`badge-${t}`);
+    if (el) el.textContent = db[t].length;
+  });
+}
+
+function renderDashboard() {
+  document.getElementById("page-title").textContent = "Dashboard";
+  document.getElementById("btn-add").style.display = "none";
+  const totalParticipants = db.Participants.length;
+  const totalStudies = db.Studies.length;
+  const totalAssignments = db.Assignments.length;
+  const totalCredits = db.Credit_Hours_Log.reduce((s,r)=>s+r.hours_awarded,0);
+  const completedAssignments = db.Assignments.filter(a=>a.completion_status==="Completed").length;
+  const activeParticipants = db.Participants.filter(p=>p.is_active).length;
+
+  let html = `
+    <div class="dash-grid">
+      <div class="stat"><div class="stat-value">${totalParticipants}</div><div class="stat-label">Total Participants</div></div>
+      <div class="stat"><div class="stat-value">${activeParticipants}</div><div class="stat-label">Active Participants</div></div>
+      <div class="stat"><div class="stat-value">${totalStudies}</div><div class="stat-label">Studies</div></div>
+      <div class="stat"><div class="stat-value">${totalAssignments}</div><div class="stat-label">Assignments</div></div>
+      <div class="stat"><div class="stat-value">${completedAssignments}</div><div class="stat-label">Completed Assignments</div></div>
+      <div class="stat"><div class="stat-value">${totalCredits.toFixed(2)}</div><div class="stat-label">Total Credit Hours Awarded</div></div>
+    </div>
+    <div class="recent">
+      <h3>📝 Recent Assignments</h3>
+      ${db.Assignments.slice(-8).reverse().map(a => {
+        const p = db.Participants.find(x=>x.participant_id===a.participant_id);
+        const s = db.Studies.find(x=>x.study_id===a.study_id);
+        return `<div class="recent-row"><span>${p ? p.first_name+" "+p.last_name : "Participant "+a.participant_id} → ${s ? s.study_name : "Study "+a.study_id}</span><span>${statusBadge(a.completion_status)}</span></div>`;
+      }).join("")}
+    </div>
+    <div class="recent" style="margin-top:20px">
+      <h3>⏱️ Top Credit Hours by Participant</h3>
+      ${Object.entries(db.Credit_Hours_Log.reduce((acc,cur)=>{
+        const a = db.Assignments.find(x=>x.assignment_id===cur.assignment_id);
+        const pid = a ? a.participant_id : 0;
+        acc[pid] = (acc[pid]||0) + cur.hours_awarded;
+        return acc;
+      },{})).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([pid,hours])=>{
+        const p = db.Participants.find(x=>x.participant_id==pid);
+        return `<div class="recent-row"><span>${p ? p.first_name+" "+p.last_name : "Participant "+pid}</span><span><b>${hours.toFixed(2)} hrs</b></span></div>`;
+      }).join("")}
+    </div>
+  `;
+  document.getElementById("content").innerHTML = html;
+}
+
+/* ============================
+   NAVIGATION
+   ============================ */
+document.getElementById("sidebar").addEventListener("click", e => {
+  const item = e.target.closest(".nav-item");
+  if (!item) return;
+  document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+  item.classList.add("active");
+  currentTable = item.dataset.table;
+  searchTerm = "";
+  document.getElementById("search").value = "";
+  render();
+});
+
+document.getElementById("search").addEventListener("input", e => {
+  searchTerm = e.target.value;
+  render();
+});
+
+/* ============================
+   ADD RECORD
+   ============================ */
+function openAddModal() {
+  if (currentTable === "dashboard") return;
+  const meta = schema[currentTable];
+  document.getElementById("modal-title").textContent = `Add ${currentTable.replace(/_/g," ")}`;
+  let html = `<div class="form-grid">`;
+  meta.fields.forEach(f => {
+    const required = f.required ? " required" : "";
+    let input = "";
+    if (f.type === "select") {
+      input = `<select id="field-${f.name}"${required}>`;
+      if (!f.required) input += `<option value="">— Select —</option>`;
+      f.options.forEach(opt => {
+        if (typeof opt === "object") input += `<option value="${opt.value}">${opt.label}</option>`;
+        else input += `<option value="${opt}">${opt}</option>`;
+      });
+      input += `</select>`;
+    } else if (f.type === "textarea") {
+      input = `<textarea id="field-${f.name}" rows="3"${required}></textarea>`;
+    } else if (f.ref) {
+      input = `<select id="field-${f.name}"${required}>`;
+      if (!f.required) input += `<option value="">— Select —</option>`;
+      db[f.ref].forEach(r => {
+        const val = r[schema[f.ref].pk];
+        const label = r[f.refLabel] || val;
+        input += `<option value="${val}">${label} (${val})</option>`;
+      });
+      input += `</select>`;
+    } else {
+      input = `<input type="${f.type}" id="field-${f.name}"${f.step?` step="${f.step}"`:""}${required}>`;
+    }
+    html += `
+      <div class="field ${f.type==="textarea"?"full":""}">
+        <label>${f.name.replace(/_/g," ")}${f.required?" *":""}</label>
+        ${input}
+      </div>
+    `;
+  });
+  html += `</div>`;
+  document.getElementById("modal-body").innerHTML = html;
+  document.getElementById("modal-overlay").classList.add("open");
+}
+
+function closeModal() {
+  document.getElementById("modal-overlay").classList.remove("open");
+}
+
+function submitAdd() {
+  const meta = schema[currentTable];
+  const row = {};
+  if (meta.auto) row[meta.pk] = nextId(currentTable);
+  for (const f of meta.fields) {
+    const el = document.getElementById(`field-${f.name}`);
+    let val = el.value;
+    if (f.required && !val && val !== false) { toast(`${f.name} is required.`, "error"); return; }
+    if (f.type === "number") val = val === "" ? null : parseFloat(val);
+    if (f.type === "select" && f.options && f.options.length && typeof f.options[0] === "object" && (f.options[0].value === true || f.options[0].value === false)) {
+      val = val === "true" ? true : val === "false" ? false : val;
+    }
+    row[f.name] = val;
+  }
+  db[currentTable].push(row);
+  saveToStorage();
+  closeModal();
+  toast("Record added successfully!", "success");
+  render();
+}
+
+/* ============================
+   DELETE WITH CASCADE OPTION
+   ============================ */
+function promptDelete(id) {
+  const meta = schema[currentTable];
+  const pk = meta.pk;
+  const row = db[currentTable].find(r => r[pk] == id);
+  if (!row) return;
+
+  // Find all referencing records
+  const impacts = [];
+  Object.keys(schema).forEach(t => {
+    if (t === currentTable) return;
+    schema[t].fields.forEach(f => {
+      if (f.ref === currentTable) {
+        const refs = db[t].filter(r => r[f.name] == id);
+        refs.forEach(r => {
+          const label = f.refLabel ? r[f.refLabel] : r[schema[t].pk];
+          impacts.push({ table: t, id: r[schema[t].pk], label: label || `ID ${r[schema[t].pk]}` });
+        });
+      }
+    });
+  });
+
+  pendingDelete = { table: currentTable, id, impacts };
+
+  let bodyHtml = `<p>You are about to delete <b>${currentTable.replace(/_/g," ")}</b> record <b>#${id}</b>.</p>`;
+
+  if (impacts.length) {
+    bodyHtml += `<p style="margin-top:10px; color:var(--danger); font-weight:600;">⚠️ This record is referenced by ${impacts.length} other record(s):</p>`;
+    bodyHtml += `<ul class="impact-list">`;
+    impacts.forEach(imp => {
+      bodyHtml += `<li><b>${imp.table.replace(/_/g," ")}</b> — ${imp.label} <span class="meta">(ID ${imp.id})</span></li>`;
+    });
+    bodyHtml += `</ul>`;
+    bodyHtml += `
+      <div class="cascade-toggle">
+        <input type="checkbox" id="cascade-check">
+        <label for="cascade-check">Cascade delete — also remove all dependent records above</label>
+      </div>
+    `;
+  } else {
+    bodyHtml += `<p style="margin-top:10px; color:var(--success);">✅ No other records reference this. Safe to delete.</p>`;
+  }
+
+  document.getElementById("delete-body").innerHTML = bodyHtml;
+  document.getElementById("btn-delete-confirm").textContent = impacts.length ? "Delete with Cascade" : "Confirm Delete";
+  document.getElementById("delete-overlay").classList.add("open");
+}
+
+function closeDeleteModal() {
+  document.getElementById("delete-overlay").classList.remove("open");
+  pendingDelete = null;
+}
+
+function confirmDelete() {
+  if (!pendingDelete) return;
+  const { table, id, impacts } = pendingDelete;
+  const cascade = document.getElementById("cascade-check")?.checked || false;
+  const meta = schema[table];
+
+  if (impacts.length && !cascade) {
+    toast("Deletion blocked: dependent records exist. Enable cascade to force delete.", "warning", 4000);
+    closeDeleteModal();
+    return;
+  }
+
+  // Perform cascade: delete children first (bottom-up to avoid missing refs)
+  if (cascade && impacts.length) {
+    // Group by table and delete
+    const byTable = {};
+    impacts.forEach(imp => { byTable[imp.table] = byTable[imp.table] || []; byTable[imp.table].push(imp.id); });
+    // Sort tables by dependency depth (Credit_Hours_Log depends on Assignments, etc.)
+    const order = ["Credit_Hours_Log", "Assignments", "Studies", "Ethics_Approvals", "Researchers", "Participants"];
+    const sortedTables = Object.keys(byTable).sort((a,b) => order.indexOf(a) - order.indexOf(b));
+    sortedTables.forEach(t => {
+      const pk = schema[t].pk;
+      db[t] = db[t].filter(r => !byTable[t].includes(r[pk]));
+    });
+  }
+
+  // Delete the main record
+  db[table] = db[table].filter(r => r[meta.pk] != id);
+  saveToStorage();
+
+  toast(`Deleted ${table.replace(/_/g," ")} #${id}${cascade ? " and dependents" : ""}.`, "success");
+  closeDeleteModal();
+  render();
+}
+
+// Close modals on overlay click
+document.getElementById("modal-overlay").addEventListener("click", e => { if (e.target.id === "modal-overlay") closeModal(); });
+document.getElementById("delete-overlay").addEventListener("click", e => { if (e.target.id === "delete-overlay") closeDeleteModal(); });
+
+// Persistence helpers
+const STORAGE_KEY = 'psych_pool_db_v1';
+function saveToStorage() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); showSaveStatus(); } catch(e) { console.warn('Storage failed', e); }
+}
+function showSaveStatus() {
+  const el = document.getElementById('save-status');
+  if (!el) return;
+  el.style.opacity = '1';
+  setTimeout(() => el.style.opacity = '0', 2000);
+}
+function loadFromStorage() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      Object.keys(db).forEach(k => { if (parsed[k]) db[k] = parsed[k]; });
+      return true;
+    }
+  } catch(e) { console.warn('Load failed', e); }
+  return false;
+}
+function exportData() {
+  const blob = new Blob([JSON.stringify(db, null, 2)], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'psychology_research_pool_data.json'; a.click();
+  URL.revokeObjectURL(url);
+  toast('Database exported!', 'success');
+}
+function importData() {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = '.json';
+  input.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const parsed = JSON.parse(ev.target.result);
+        Object.keys(db).forEach(k => { if (parsed[k]) db[k] = parsed[k]; });
+        saveToStorage();
+        render();
+        toast('Database imported successfully!', 'success');
+      } catch(err) { toast('Invalid JSON file.', 'error'); }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+function resetData() {
+  if (!confirm('Reset ALL data to original seed values? This cannot be undone.')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  location.reload();
+}
+
+// Load saved data if available
+if (loadFromStorage()) {
+  toast('Loaded saved data from browser storage.', 'success', 2000);
+}
+
+// Initial render
+render();
+if (loadFromStorage()) showSaveStatus();
+</script>
+</body>
+</html>
