@@ -1,6 +1,6 @@
 # Psychology Research Pool GUI
 
-🔗 **Live site**: `https://petergirgis105.github.io/psychology-research-pool-gui/`
+🔗 **Live site**: `https://petergirgis105.github.io/psychology-research2-pool-gui/`
 
 A fully interactive database GUI that runs entirely in the browser. Data is saved to browser storage (`localStorage`) so it survives page reloads.
 
